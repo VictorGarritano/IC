@@ -4,14 +4,6 @@ import numpy as np
 from keras.preprocessing.text import Tokenizer
 from keras.preprocessing.sequence import pad_sequences
 from keras.utils.np_utils import to_categorical
-import argparse
-
-parser = argparse.ArgumentParser(description='Choose model parameters')
-parser.add_argument('--preprocessed', type=bool, default=False,
-	help='loads preprocessed corpus')
-
-args = parser.parse_args()
-preprocessed = args.preprocessed
 
 def load_corpus(path, usecols=['gold_label', 'sentence1_binary_parse', 'sentence2_binary_parse']):
 	df = pd.read_csv(path,
@@ -54,55 +46,36 @@ Preprocessing data
 
 """
 
-if not preprocessed:
-	print ("Preprocessing corpus...")
-	path = 'snli_1.0/snli_1.0_train.txt'
-	df = load_corpus(path)
-	df = drop_unclassified(df)
-	classes_to_categories(df)
-	df['sentence1_binary_parse'] = df['sentence1_binary_parse'].apply(
-		lambda x: extract_tokens_from_binary_parse(str(x)))
-	df['sentence2_binary_parse'] = df['sentence2_binary_parse'].apply(
-		lambda x: extract_tokens_from_binary_parse(str(x)))
-	# print (max(len(x) for x in df['sentence1_binary_parse'])) #	82 
-	# print (max(len(x) for x in df['sentence2_binary_parse'])) #	62
-	MAX_LEN = 82
+print ("Preprocessing corpus...")
+path = 'snli_1.0/snli_1.0_train.txt'
+df = load_corpus(path)
+df = drop_unclassified(df)
+classes_to_categories(df)
+df['sentence1_binary_parse'] = df['sentence1_binary_parse'].apply(
+	lambda x: extract_tokens_from_binary_parse(str(x)))
+df['sentence2_binary_parse'] = df['sentence2_binary_parse'].apply(
+	lambda x: extract_tokens_from_binary_parse(str(x)))
+# print (max(len(x) for x in df['sentence1_binary_parse'])) #	82 
+# print (max(len(x) for x in df['sentence2_binary_parse'])) #	62
+MAX_LEN = 82
 
-	tokenizer = Tokenizer(lower=False, filters='')
-	sent1, sent2 = tokens_to_sentences(df['sentence1_binary_parse'], 
-		df['sentence2_binary_parse'])
-	tokenizer.fit_on_texts(sent1 + sent2)
-	# print (len(tokenizer.word_counts))#	42389 unique tokens
+tokenizer = Tokenizer(lower=False, filters='')
+sent1, sent2 = tokens_to_sentences(df['sentence1_binary_parse'], 
+	df['sentence2_binary_parse'])
+tokenizer.fit_on_texts(sent1 + sent2)
+# print (len(tokenizer.word_counts))#	42389 unique tokens
 
-	y = categories_to_categorical(df['gold_label'], 3)
-	# print y[0]
+y = categories_to_categorical(df['gold_label'], 3)
+# print y[0]
 
-	to_seq = lambda X: pad_sequences(tokenizer.texts_to_sequences(X), maxlen=MAX_LEN)
-	sentences_to_padded_index_sequences = lambda data: to_seq(data)
+to_seq = lambda X: pad_sequences(tokenizer.texts_to_sequences(X), maxlen=MAX_LEN)
+sentences_to_padded_index_sequences = lambda data: to_seq(data)
 
-	sent1, sent2 = sentences_to_padded_index_sequences(sent1), \
-	sentences_to_padded_index_sequences(sent2)
-	# print ('Shape of sent1 tensor: ', sent1.shape)#	('Shape of sent1 tensor: ', (549367, 82))
-	# print ('Shape of sent2 tensor: ', sent2.shape)#	('Shape of sent2 tensor: ', (549367, 82))
-	# print ('Shape of label tensor: ', y.shape)#	('Shape of label tensor: ', (549367, 3))
-
-	np.save("snli_train_sent1.npy", sent1, allow_pickle=False)
-	np.save("snli_train_sent2.npy", sent1, allow_pickle=False)
-	np.save("snli_train_labels.npy", y, allow_pickle=False)
-
-	if os.path.exists("snli_train_sent1.npy") and \
-	os.path.exists("snli_train_sent2.npy") and \
-	os.path.exists("snli_train_labels.npy"):
-		print ("SNLI preprocessed train model saved")
-	else:
-		print ("Save error")
-
-else:
-	print ("Loading preprocessed corpus...")
-	sent1, sent2, y = np.load("snli_train_sent1.npy"), np.load("snli_train_sent2.npy"), np.load("snli_train_labels.npy")
-	print ('Shape of sent1 tensor: ', sent1.shape)
-	print ('Shape of sent2 tensor: ', sent2.shape)
-	print ('Shape of labels tensor: ', y.shape)
+sent1, sent2 = sentences_to_padded_index_sequences(sent1), \
+sentences_to_padded_index_sequences(sent2)
+# print ('Shape of sent1 tensor: ', sent1.shape)#	('Shape of sent1 tensor: ', (549367, 82))
+# print ('Shape of sent2 tensor: ', sent2.shape)#	('Shape of sent2 tensor: ', (549367, 82))
+# print ('Shape of label tensor: ', y.shape)	#	('Shape of label tensor: ', (549367, 3))
 
 """
 Preparing the Embedding Layer (coming soon...)
