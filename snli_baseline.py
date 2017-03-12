@@ -6,8 +6,8 @@ from keras.preprocessing.sequence import pad_sequences
 from keras.utils.np_utils import to_categorical
 
 def load_corpus(path, usecols=['gold_label',
-								'sentence1_binary_parse',
-								'sentence2_binary_parse']):
+			       'sentence1_binary_parse',
+			       'sentence2_binary_parse']):
 	df = pd.read_csv(path,
 		delimiter='\t', usecols=usecols)
 	return df
@@ -76,7 +76,7 @@ sent1, sent2 = sentences_to_padded_index_sequences(sent1), \
 sentences_to_padded_index_sequences(sent2)
 # print ('Shape of sent1 tensor: ', sent1.shape)#	('Shape of sent1 tensor: ', (549367, 82))
 # print ('Shape of sent2 tensor: ', sent2.shape)#	('Shape of sent2 tensor: ', (549367, 82))
-# print ('Shape of label tensor: ', y.shape)#	('Shape of label tensor: ', (549367, 3))
+# print ('Shape of label tensor: ', y.shape)#	    ('Shape of label tensor: ', (549367, 3))
 
 """
 Preparing the Embedding Layer (coming soon...)
