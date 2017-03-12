@@ -13,9 +13,7 @@ parser.add_argument('--preprocessed', type=bool, default=False,
 args = parser.parse_args()
 preprocessed = args.preprocessed
 
-def load_corpus(path, usecols=['gold_label',
-								'sentence1_binary_parse',
-								'sentence2_binary_parse']):
+def load_corpus(path, usecols=['gold_label', 'sentence1_binary_parse', 'sentence2_binary_parse']):
 	df = pd.read_csv(path,
 		delimiter='\t', usecols=usecols)
 	return df
