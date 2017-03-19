@@ -9,7 +9,7 @@ from keras.preprocessing.sequence import pad_sequences
 from keras.utils.np_utils import to_categorical
 from keras.layers import Embedding, TimeDistributed, Dropout, Input, Dense, concatenate, normalization
 from keras.regularizers import l2
-from keras.layers.recurrent	import SimpleRNN, LSTM
+from keras.layers.recurrent import SimpleRNN, LSTM
 
 def load_corpus(path, usecols=['gold_label', 'sentence1_binary_parse', 'sentence2_binary_parse']):
 	df = pd.read_csv(path,
@@ -152,16 +152,16 @@ for word, i in tokenizer.word_index.items():
 		embedding_matrix[i] = embedding_vector
 
 embedding_layer = Embedding(len(tokenizer.word_index) + 1,
-							100,
-							weights=[embedding_matrix],
-							input_length=MAX_LEN,
-							trainable=False)
+			100,
+			weights=[embedding_matrix],
+			input_length=MAX_LEN,
+			trainable=False)
 
 sum_embeddings_layer = keras.layers.core.Lambda(lambda x: K.sum(x, axis=1), output_shape=(100, ))
 rnn_layer = SimpleRNN(units=100, activation='tanh', dropout=0.5,
-					recurrent_dropout=0.5, implementation=0)
+		recurrent_dropout=0.5, implementation=0)
 lstm_layer = LSTM(units=100, activation='sigmoid', recurrent_activation='tanh',
-				dropout=0.5, recurrent_dropout=0.5, implementation=0)
+		dropout=0.5, recurrent_dropout=0.5, implementation=0)
 translate_layer = Dense(units=100, activation='tanh')
 
 premise = Input(shape=(MAX_LEN, ), dtype='int32')
