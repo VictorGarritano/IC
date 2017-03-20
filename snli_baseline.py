@@ -189,8 +189,7 @@ model = Model(outputs=pred, inputs=[premise, hypothesis])
 
 model.compile(loss='categorical_crossentropy', optimizer='adadelta', metrics=['accuracy'])
 callbacks = [EarlyStopping(monitor='val_acc', patience=4),\
-			TensorBoard(log_dir='./logs/snli/run1', histogram_freq=1, write_graph=False),\
-			ReduceLROnPlateau(monitor='val_acc', factor=0.3, patience=5)]
+			TensorBoard(log_dir='./logs/snli/run1', histogram_freq=1, write_graph=False)]
 model.fit([sent1_train, sent2_train], y_train, batch_size=512, epochs=100, 
 	validation_data=([sent1_dev, sent2_dev], y_dev), callbacks=callbacks)
 loss, acc = model.evaluate([sent1_test, sent2_test], y_test)
