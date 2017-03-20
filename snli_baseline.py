@@ -4,12 +4,14 @@ import numpy as np
 import keras
 import keras.backend as K 
 from keras.models import Model
+from keras.callbacks import EarlyStopping, TensorBoard, ReduceLROnPlateau
 from keras.preprocessing.text import Tokenizer
 from keras.preprocessing.sequence import pad_sequences
 from keras.utils.np_utils import to_categorical
-from keras.layers import Embedding, TimeDistributed, Dropout, Input, Dense, concatenate, normalization
+from keras.layers import Embedding, TimeDistributed, Dropout, Input, Dense, concatenate
+from keras.layers.normalization import BatchNormalization
 from keras.regularizers import l2
-from keras.layers.recurrent import SimpleRNN, LSTM
+from keras.layers.recurrent	import SimpleRNN, LSTM
 
 def load_corpus(path, usecols=['gold_label', 'sentence1_binary_parse', 'sentence2_binary_parse']):
 	df = pd.read_csv(path,
@@ -152,17 +154,17 @@ for word, i in tokenizer.word_index.items():
 		embedding_matrix[i] = embedding_vector
 
 embedding_layer = Embedding(len(tokenizer.word_index) + 1,
-			100,
-			weights=[embedding_matrix],
-			input_length=MAX_LEN,
-			trainable=False)
+							100,
+							weights=[embedding_matrix],
+							input_length=MAX_LEN,
+							trainable=False)
 
 sum_embeddings_layer = keras.layers.core.Lambda(lambda x: K.sum(x, axis=1), output_shape=(100, ))
 rnn_layer = SimpleRNN(units=100, activation='tanh', dropout=0.5,
-		recurrent_dropout=0.5, implementation=0)
+					recurrent_dropout=0.5, implementation=0)
 lstm_layer = LSTM(units=100, activation='sigmoid', recurrent_activation='tanh',
-		dropout=0.5, recurrent_dropout=0.5, implementation=0)
-translate_layer = Dense(units=100, activation='tanh')
+				dropout=0.5, recurrent_dropout=0.5, implementation=0)
+translate_layer = Dense(units=100, activation='relu')
 
 premise = Input(shape=(MAX_LEN, ), dtype='int32')
 hypothesis = Input(shape=(MAX_LEN, ), dtype='int32')
@@ -172,22 +174,25 @@ prem = sum_embeddings_layer(prem)
 hypo = sum_embeddings_layer(hypo)
 prem = translate_layer(prem)
 hypo = translate_layer(hypo)
-prem = normalization.BatchNormalization()(prem)
-hypo = normalization.BatchNormalization()(hypo)
+prem = BatchNormalization()(prem)
+hypo = BatchNormalization()(hypo)
 merged_sentences = concatenate([prem, hypo], axis=1)
-x = Dense(200, activation='tanh', kernel_regularizer=l2(4e-6))(merged_sentences)
-x = normalization.BatchNormalization()(x)
-x = Dense(200, activation='tanh', kernel_regularizer=l2(4e-6))(x)
-x = normalization.BatchNormalization()(x)
-x = Dense(200, activation='tanh', kernel_regularizer=l2(4e-6))(x)
-x = normalization.BatchNormalization()(x)
+x = Dense(200, activation='relu', kernel_regularizer=l2(1e-2))(merged_sentences)
+x = BatchNormalization()(x)
+x = Dense(200, activation='relu', kernel_regularizer=l2(1e-2))(x)
+x = BatchNormalization()(x)
+x = Dense(200, activation='relu', kernel_regularizer=l2(1e-2))(x)
+x = BatchNormalization()(x)
 pred = Dense(3, activation='softmax')(x)
 
 model = Model(outputs=pred, inputs=[premise, hypothesis])
 
 model.compile(loss='categorical_crossentropy', optimizer='adadelta', metrics=['accuracy'])
+callbacks = [EarlyStopping(monitor='val_acc', patience=4),\
+			TensorBoard(log_dir='./logs/snli/run1', histogram_freq=1, write_graph=False),\
+			ReduceLROnPlateau(monitor='val_acc', factor=0.6, patience=5)]
 model.fit([sent1_train, sent2_train], y_train, batch_size=512, epochs=100, 
-	validation_data=([sent1_dev, sent2_dev], y_dev))
-test = model.evaluate([sent1_test, sent2_test], y_test)
+	validation_data=([sent1_dev, sent2_dev], y_dev), callbacks=callbacks)
+loss, acc = model.evaluate([sent1_test, sent2_test], y_test)
 
-print ('\nloss: ' + str(test[0]) + '  acc: ' + str(test[1]))
+print ('\nloss: ' + str(loss) + '  acc: ' + str(acc))
