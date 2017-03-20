@@ -11,7 +11,7 @@ from keras.utils.np_utils import to_categorical
 from keras.layers import Embedding, TimeDistributed, Dropout, Input, Dense, concatenate
 from keras.layers.normalization import BatchNormalization
 from keras.regularizers import l2
-from keras.layers.recurrent	import SimpleRNN, LSTM
+from keras.layers.recurrent import SimpleRNN, LSTM
 
 def load_corpus(path, usecols=['gold_label', 'sentence1_binary_parse', 'sentence2_binary_parse']):
 	df = pd.read_csv(path,
