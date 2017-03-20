@@ -148,7 +148,7 @@ loss: categorical_crossentropy
 optimizer: Adam(lr=0.001)
 batch_size = 512
 
-after  epochs:
+after 15 epochs:
 acc_train: 0.7476
 acc_val: 0.7100
 acc_test: 0.7085
