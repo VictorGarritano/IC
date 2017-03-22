@@ -134,7 +134,7 @@ Preparing the Embedding Layer
 print ("Preparing Embedding Layer...")
 GLOVE_DIR = ''
 embeddings_index = {}
-with open(os.path.join(GLOVE_DIR, 'glove.6B.100d.txt')) as f:
+with open(os.path.join(GLOVE_DIR, 'glove.840B.300d.txt')) as f:
 	for line in f:
 		values = line.split()
 		word = values[0]
@@ -148,23 +148,21 @@ Baseline model
 
 """
 print ("Building model...")
-embedding_matrix = np.zeros((len(tokenizer.word_index) + 1, 100))
+embedding_matrix = np.zeros((len(tokenizer.word_index) + 1, 300))
 for word, i in tokenizer.word_index.items():
 	embedding_vector = embeddings_index.get(word)
 	if embedding_vector is not None:
 		embedding_matrix[i] = embedding_vector
 
 embedding_layer = Embedding(len(tokenizer.word_index) + 1,
-							100,
+							300,
 							weights=[embedding_matrix],
 							input_length=MAX_LEN,
 							trainable=False)
 
-sum_embeddings_layer = keras.layers.core.Lambda(lambda x: K.sum(x, axis=1), output_shape=(100, ))
-rnn_layer = SimpleRNN(units=100, activation='tanh', dropout=0.5,
-					recurrent_dropout=0.5, implementation=0)
-lstm_layer = LSTM(units=100, activation='sigmoid', recurrent_activation='tanh',
-				dropout=0.5, recurrent_dropout=0.5, implementation=0)
+sum_embeddings_layer = keras.layers.core.Lambda(lambda x: K.sum(x, axis=1), output_shape=(300, ))
+rnn_layer = SimpleRNN(units=300, dropout=0.5, recurrent_dropout=0.5, implementation=1)
+lstm_layer = LSTM(units=300, dropout=0.5, recurrent_dropout=0.5, implementation=2)
 translate_layer = Dense(units=100, activation='relu')
 
 premise = Input(shape=(MAX_LEN, ), dtype='int32')
@@ -187,10 +185,8 @@ x = BatchNormalization()(x)
 pred = Dense(3, activation='softmax')(x)
 
 model = Model(outputs=pred, inputs=[premise, hypothesis])
-# adam = optimizers.Adam(lr=0.045)
 model.compile(loss='categorical_crossentropy', optimizer='nadam', metrics=['accuracy'])
-callbacks = [EarlyStopping(monitor='val_acc', patience=4),\
-			TensorBoard(log_dir='./logs/snli/run1_nadam', histogram_freq=1, write_graph=False)]
+callbacks = [EarlyStopping(monitor='val_acc', patience=4)]
 model.fit([sent1_train, sent2_train], y_train, batch_size=512, epochs=100, 
 	validation_data=([sent1_dev, sent2_dev], y_dev),callbacks=callbacks)
 loss, acc = model.evaluate([sent1_test, sent2_test], y_test)
