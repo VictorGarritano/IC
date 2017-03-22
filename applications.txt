@@ -2,3 +2,5 @@ Question answering (QA)
 Semantic search
 Automatic Summarization
 Evaluation of machine translation systems
+
+(https://nlp.stanford.edu/~wcmac/papers/nli-diss.pdf)
