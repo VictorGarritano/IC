@@ -4,6 +4,7 @@ import numpy as np
 import keras
 import keras.backend as K 
 from keras.models import Model
+from keras import optimizers
 from keras.callbacks import EarlyStopping, TensorBoard, ReduceLROnPlateau
 from keras.preprocessing.text import Tokenizer
 from keras.preprocessing.sequence import pad_sequences
@@ -154,16 +155,16 @@ for word, i in tokenizer.word_index.items():
 		embedding_matrix[i] = embedding_vector
 
 embedding_layer = Embedding(len(tokenizer.word_index) + 1,
-				100,
-				weights=[embedding_matrix],
-				input_length=MAX_LEN,
-				trainable=False)
+							100,
+							weights=[embedding_matrix],
+							input_length=MAX_LEN,
+							trainable=False)
 
 sum_embeddings_layer = keras.layers.core.Lambda(lambda x: K.sum(x, axis=1), output_shape=(100, ))
 rnn_layer = SimpleRNN(units=100, activation='tanh', dropout=0.5,
-			recurrent_dropout=0.5, implementation=0)
+					recurrent_dropout=0.5, implementation=0)
 lstm_layer = LSTM(units=100, activation='sigmoid', recurrent_activation='tanh',
-			dropout=0.5, recurrent_dropout=0.5, implementation=0)
+				dropout=0.5, recurrent_dropout=0.5, implementation=0)
 translate_layer = Dense(units=100, activation='relu')
 
 premise = Input(shape=(MAX_LEN, ), dtype='int32')
@@ -177,21 +178,21 @@ hypo = translate_layer(hypo)
 prem = BatchNormalization()(prem)
 hypo = BatchNormalization()(hypo)
 merged_sentences = concatenate([prem, hypo], axis=1)
-x = Dense(200, activation='relu', kernel_regularizer=l2(1e-2))(merged_sentences)
+x = Dense(200, activation='relu', kernel_regularizer=l2(4e-6))(merged_sentences)
 x = BatchNormalization()(x)
-x = Dense(200, activation='relu', kernel_regularizer=l2(1e-2))(x)
+x = Dense(200, activation='relu', kernel_regularizer=l2(4e-6))(x)
 x = BatchNormalization()(x)
-x = Dense(200, activation='relu', kernel_regularizer=l2(1e-2))(x)
+x = Dense(200, activation='relu', kernel_regularizer=l2(4e-6))(x)
 x = BatchNormalization()(x)
 pred = Dense(3, activation='softmax')(x)
 
 model = Model(outputs=pred, inputs=[premise, hypothesis])
-
-model.compile(loss='categorical_crossentropy', optimizer='adadelta', metrics=['accuracy'])
+# adam = optimizers.Adam(lr=0.045)
+model.compile(loss='categorical_crossentropy', optimizer='nadam', metrics=['accuracy'])
 callbacks = [EarlyStopping(monitor='val_acc', patience=4),\
-			TensorBoard(log_dir='./logs/snli/run1', histogram_freq=1, write_graph=False)]
+			TensorBoard(log_dir='./logs/snli/run1_nadam', histogram_freq=1, write_graph=False)]
 model.fit([sent1_train, sent2_train], y_train, batch_size=512, epochs=100, 
-	validation_data=([sent1_dev, sent2_dev], y_dev), callbacks=callbacks)
+	validation_data=([sent1_dev, sent2_dev], y_dev),callbacks=callbacks)
 loss, acc = model.evaluate([sent1_test, sent2_test], y_test)
 
 print ('\nloss: ' + str(loss) + '  acc: ' + str(acc))
