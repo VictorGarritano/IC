@@ -1,0 +1,2 @@
+Treinar a rede no LC3 com o Adadelta, o glove.840B.300d e o sum_embedding_layer, batch_size=512
+Treinar a rede no LC3 com o Adadelta, o glove.840B.300d e o sum_embedding_layer, batch_size=1024
