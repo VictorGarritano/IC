@@ -174,3 +174,97 @@ acc_val: 0.
 acc_test: 0.
 _______________________________________
 
+Early Stopping(patience=4)
+embedding(pre-trained glove.6B.100d)+
+sum100d+
+translate100d_relu+
+BN+
+concat200d+
+(fc200d_relu(kernel_regul:4e-6)+BN)x3+
+softmax:
+
+loss: categorical_crossentropy
+optimizer: adadelta
+batch_size: 512
+
+after  epochs:
+acc_train: 0.
+acc_val: 0.
+acc_test: 0.
+_______________________________________
+
+Early Stopping(patience=4)
+embedding(pre-trained glove.6B.100d)+
+sum100d+
+translate100d_relu+
+BN+
+concat200d+
+(fc200d_relu(kernel_regul:4e-6)+BN)x3+
+softmax:
+
+loss: categorical_crossentropy
+optimizer: adadelta
+batch_size: 1024
+
+after  epochs:
+acc_train: 0.
+acc_val: 0.
+acc_test: 0.
+_______________________________________
+
+Early Stopping(patience=8)
+embedding(pre-trained glove.6B.100d)+
+sum100d+
+translate100d_relu+
+BN+
+concat200d+
+(fc200d_relu(kernel_regul:4e-6)+BN)x3+
+softmax:
+
+loss: categorical_crossentropy
+optimizer: adadelta
+batch_size: 512
+
+after  epochs:
+acc_train: 0.
+acc_val: 0.
+acc_test: 0.
+_______________________________________
+
+Early Stopping(patience=8)
+embedding(pre-trained glove.6B.100d)+
+sum100d+
+translate100d_relu+
+BN+
+concat200d+
+(fc200d_relu(kernel_regul:4e-6)+BN)x3+
+softmax:
+
+loss: categorical_crossentropy
+optimizer: adadelta
+batch_size: 1024
+
+after  epochs:
+acc_train: 0.
+acc_val: 0.
+acc_test: 0.
+_______________________________________
+
+Early Stopping(patience=4)
+embedding(pre-trained glove.6B.100d)+
+sum100d+
+translate100d_relu+
+BN+
+concat200d+
+(fc200d_relu(kernel_regul:4e-6)+BN)x3+
+softmax:
+
+loss: categorical_crossentropy
+optimizer: nadam
+batch_size: 512
+
+after 17 epochs:
+acc_train: 0.7527
+acc_val: 0.7144
+acc_test: 0.7171
+_______________________________________
