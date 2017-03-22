@@ -1,0 +1,4 @@
+Question answering (QA)
+Semantic search
+Automatic Summarization
+Evaluation of machine translation systems
