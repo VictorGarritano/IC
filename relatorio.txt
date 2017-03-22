@@ -268,3 +268,22 @@ acc_train: 0.7527
 acc_val: 0.7144
 acc_test: 0.7171
 _______________________________________
+
+Early Stopping(patience=4)
+embedding(pre-trained glove.840B.300d)+
+sum300d+
+translate100d_relu+
+BN+
+concat200d+
+(fc200d_relu(kernel_regul:4e-6)+BN)x3+
+softmax:
+
+loss: categorical_crossentropy
+optimizer: nadam
+batch_size: 512
+
+after 15 epochs:
+acc_train: 0.8068
+acc_val: 0.7754
+acc_test: 0.7674
+_______________________________________
