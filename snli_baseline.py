@@ -1,6 +1,7 @@
 import pandas as pd
 import os
 import numpy as np
+import tensorflow as tf
 import keras
 import keras.backend as K 
 from keras.models import Model
@@ -54,6 +55,12 @@ Preprocessing data
 8. Pad sequences, so they all have the same length (default: 42)
 
 """
+
+"""
+Check devices numbers of Tesla GPUs
+
+"""
+sess = tf.Session(config=tf.ConfigProto(log_device_placement=True))
 
 print ("Preprocessing train corpus...")
 path_train = 'snli_1.0/snli_1.0_train.txt'
@@ -184,11 +191,40 @@ x = Dense(200, activation='relu', kernel_regularizer=l2(4e-6))(x)
 x = BatchNormalization()(x)
 pred = Dense(3, activation='softmax')(x)
 
-model = Model(outputs=pred, inputs=[premise, hypothesis])
-model.compile(loss='categorical_crossentropy', optimizer='nadam', metrics=['accuracy'])
-callbacks = [EarlyStopping(monitor='val_acc', patience=4)]
-model.fit([sent1_train, sent2_train], y_train, batch_size=512, epochs=100, 
-	validation_data=([sent1_dev, sent2_dev], y_dev),callbacks=callbacks)
-loss, acc = model.evaluate([sent1_test, sent2_test], y_test)
+with tf.device('/gpu:1'):
+	print ("\n\n\n 4_512 \n\n\n")
+	model = Model(outputs=pred, inputs=[premise, hypothesis])
+	model.compile(loss='categorical_crossentropy', optimizer='adadelta', metrics=['accuracy'])
+	callbacks = [EarlyStopping(monitor='val_acc', patience=4)]
+	model.fit([sent1_train, sent2_train], y_train, batch_size=512, epochs=100, 
+		validation_data=([sent1_dev, sent2_dev], y_dev),callbacks=callbacks)
+	loss, acc = model.evaluate([sent1_test, sent2_test], y_test)
+	print ('\nloss: ' + str(loss) + '  acc: ' + str(acc))
 
-print ('\nloss: ' + str(loss) + '  acc: ' + str(acc))
+	print ("\n\n\n 4_1024 \n\n\n")
+	model = Model(outputs=pred, inputs=[premise, hypothesis])
+	model.compile(loss='categorical_crossentropy', optimizer='adadelta', metrics=['accuracy'])
+	callbacks = [EarlyStopping(monitor='val_acc', patience=4)]
+	model.fit([sent1_train, sent2_train], y_train, batch_size=1024, epochs=100, 
+		validation_data=([sent1_dev, sent2_dev], y_dev),callbacks=callbacks)
+	loss, acc = model.evaluate([sent1_test, sent2_test], y_test)
+	print ('\nloss: ' + str(loss) + '  acc: ' + str(acc))
+
+with tf.device('/gpu:2'):
+	print ("\n\n\n 8_512 \n\n\n")
+	model = Model(outputs=pred, inputs=[premise, hypothesis])
+	model.compile(loss='categorical_crossentropy', optimizer='adadelta', metrics=['accuracy'])
+	callbacks = [EarlyStopping(monitor='val_acc', patience=8)]
+	model.fit([sent1_train, sent2_train], y_train, batch_size=512, epochs=100, 
+		validation_data=([sent1_dev, sent2_dev], y_dev),callbacks=callbacks)
+	loss, acc = model.evaluate([sent1_test, sent2_test], y_test)
+	print ('\nloss: ' + str(loss) + '  acc: ' + str(acc))
+
+	print ("\n\n\n 8_1024 \n\n\n")
+	model = Model(outputs=pred, inputs=[premise, hypothesis])
+	model.compile(loss='categorical_crossentropy', optimizer='adadelta', metrics=['accuracy'])
+	callbacks = [EarlyStopping(monitor='val_acc', patience=8)]
+	model.fit([sent1_train, sent2_train], y_train, batch_size=1024, epochs=100, 
+		validation_data=([sent1_dev, sent2_dev], y_dev),callbacks=callbacks)
+	loss, acc = model.evaluate([sent1_test, sent2_test], y_test)
+	print ('\nloss: ' + str(loss) + '  acc: ' + str(acc))
