@@ -196,7 +196,7 @@ with tf.device('/gpu:1'):
 	# model.compile(loss='categorical_crossentropy', optimizer='adadelta', metrics=['accuracy'])
 	model.compile(loss='categorical_crossentropy', optimizer='adadelta')
 	callbacks = [EarlyStopping(monitor='val_acc', patience=4),\
-		TensorBoard(log_dir='./logs/snli/4_512', histogram_freq=1, write_graph=False]
+		TensorBoard(log_dir='./logs/snli/4_512', histogram_freq=1, write_graph=False)]
 	model.fit([sent1_train, sent2_train], y_train, batch_size=512, epochs=100, 
 		validation_data=([sent1_dev, sent2_dev], y_dev),callbacks=callbacks)
 	loss, acc = model.evaluate([sent1_test, sent2_test], y_test)
@@ -206,11 +206,10 @@ with tf.device('/gpu:1'):
 	# model.compile(loss='categorical_crossentropy', optimizer='adadelta', metrics=['accuracy'])
 	model.compile(loss='categorical_crossentropy', optimizer='adadelta')
 	callbacks = [EarlyStopping(monitor='val_acc', patience=4),\
-		TensorBoard(log_dir='./logs/snli/4_1024', histogram_freq=1, write_graph=False]
+		TensorBoard(log_dir='./logs/snli/4_1024', histogram_freq=1, write_graph=False)]
 	model.fit([sent1_train, sent2_train], y_train, batch_size=1024, epochs=100, 
 		validation_data=([sent1_dev, sent2_dev], y_dev),callbacks=callbacks)
 	loss, acc = model.evaluate([sent1_test, sent2_test], y_test)
-	print ('\nloss: ' + str(loss) + '  acc: ' + str(acc))
 	print ('\n\n\n 4_1024: \n\n\n' + '\nloss: ' + str(loss) + '  acc: ' + str(acc))
 
 with tf.device('/gpu:2'):
@@ -218,11 +217,10 @@ with tf.device('/gpu:2'):
 	# model.compile(loss='categorical_crossentropy', optimizer='adadelta', metrics=['accuracy'])
 	model.compile(loss='categorical_crossentropy', optimizer='adadelta')
 	callbacks = [EarlyStopping(monitor='val_acc', patience=8),\
-		TensorBoard(log_dir='./logs/snli/8_512', histogram_freq=1, write_graph=False]
+		TensorBoard(log_dir='./logs/snli/8_512', histogram_freq=1, write_graph=False)]
 	model.fit([sent1_train, sent2_train], y_train, batch_size=512, epochs=100, 
 		validation_data=([sent1_dev, sent2_dev], y_dev),callbacks=callbacks)
 	loss, acc = model.evaluate([sent1_test, sent2_test], y_test)
-	print ('\nloss: ' + str(loss) + '  acc: ' + str(acc))
 	print ('\n\n\n 8_512: \n\n\n' + '\nloss: ' + str(loss) + '  acc: ' + str(acc))
 
 	model = Model(outputs=pred, inputs=[premise, hypothesis])
@@ -233,5 +231,4 @@ with tf.device('/gpu:2'):
 	model.fit([sent1_train, sent2_train], y_train, batch_size=1024, epochs=100, 
 		validation_data=([sent1_dev, sent2_dev], y_dev),callbacks=callbacks)
 	loss, acc = model.evaluate([sent1_test, sent2_test], y_test)
-	print ('\nloss: ' + str(loss) + '  acc: ' + str(acc))
 	print ('\n\n\n 8_1024: \n\n\n' + '\nloss: ' + str(loss) + '  acc: ' + str(acc))
