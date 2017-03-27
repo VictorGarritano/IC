@@ -190,7 +190,7 @@ x = BatchNormalization()(x)
 x = Dense(200, activation='relu', kernel_regularizer=l2(4e-6))(x)
 x = BatchNormalization()(x)
 pred = Dense(3, activation='softmax')(x)
-
+print ('Start training...')
 with tf.device('/gpu:1'):
 	model = Model(outputs=pred, inputs=[premise, hypothesis])
 	# model.compile(loss='categorical_crossentropy', optimizer='adadelta', metrics=['accuracy'])
