@@ -6,7 +6,7 @@ import keras
 import keras.backend as K 
 from keras.models import Model
 from keras import optimizers
-from keras.callbacks import EarlyStopping, TensorBoard, ReduceLROnPlateau
+from keras.callbacks import EarlyStopping, CSVLogger
 from keras.preprocessing.text import Tokenizer
 from keras.preprocessing.sequence import pad_sequences
 from keras.utils.np_utils import to_categorical
@@ -14,6 +14,9 @@ from keras.layers import Embedding, TimeDistributed, Dropout, Input, Dense, conc
 from keras.layers.normalization import BatchNormalization
 from keras.regularizers import l2
 from keras.layers.recurrent import SimpleRNN, LSTM
+
+#Just use one gpu. Keras doesn't support multi-gpu yet...
+os.environ["CUDA_VISIBLE_DEVICES"]='0'
 
 def load_corpus(path, usecols=['gold_label', 'sentence1_binary_parse', 'sentence2_binary_parse']):
 	df = pd.read_csv(path,
@@ -57,10 +60,10 @@ Preprocessing data
 """
 
 """
-Check devices numbers of Tesla GPUs (I guess it's 1 and 2...)
+Check devices numbers of Tesla GPUs (it's 0 and 1)
 
 """
-sess = tf.Session(config=tf.ConfigProto(log_device_placement=True))
+# sess = tf.Session(config=tf.ConfigProto(log_device_placement=True))
 
 print ("Preprocessing train corpus...")
 path_train = 'snli_1.0/snli_1.0_train.txt'
@@ -176,8 +179,10 @@ premise = Input(shape=(MAX_LEN, ), dtype='int32')
 hypothesis = Input(shape=(MAX_LEN, ), dtype='int32')
 prem = embedding_layer(premise)
 hypo = embedding_layer(hypothesis)
-prem = sum_embeddings_layer(prem)
-hypo = sum_embeddings_layer(hypo)
+#prem = sum_embeddings_layer(prem)
+#hypo = sum_embeddings_layer(hypo)
+prem = lstm_layer(prem)
+hypo = lstm_layer(hypo)
 prem = translate_layer(prem)
 hypo = translate_layer(hypo)
 prem = BatchNormalization()(prem)
@@ -191,44 +196,16 @@ x = Dense(200, activation='relu', kernel_regularizer=l2(4e-6))(x)
 x = BatchNormalization()(x)
 pred = Dense(3, activation='softmax')(x)
 print ('Start training...')
-with tf.device('/gpu:1'):
-	model = Model(outputs=pred, inputs=[premise, hypothesis])
-	# model.compile(loss='categorical_crossentropy', optimizer='adadelta', metrics=['accuracy'])
-	model.compile(loss='categorical_crossentropy', optimizer='adadelta')
-	callbacks = [EarlyStopping(monitor='val_acc', patience=4),\
-		TensorBoard(log_dir='./logs/snli/4_512', histogram_freq=1, write_graph=False)]
-	model.fit([sent1_train, sent2_train], y_train, batch_size=512, epochs=100, 
-		validation_data=([sent1_dev, sent2_dev], y_dev),callbacks=callbacks)
-	loss, acc = model.evaluate([sent1_test, sent2_test], y_test)
-	print ('\n\n\n 4_512: \n\n\n' + '\nloss: ' + str(loss) + '  acc: ' + str(acc))
 
-	model = Model(outputs=pred, inputs=[premise, hypothesis])
-	# model.compile(loss='categorical_crossentropy', optimizer='adadelta', metrics=['accuracy'])
-	model.compile(loss='categorical_crossentropy', optimizer='adadelta')
-	callbacks = [EarlyStopping(monitor='val_acc', patience=4),\
-		TensorBoard(log_dir='./logs/snli/4_1024', histogram_freq=1, write_graph=False)]
-	model.fit([sent1_train, sent2_train], y_train, batch_size=1024, epochs=100, 
-		validation_data=([sent1_dev, sent2_dev], y_dev),callbacks=callbacks)
-	loss, acc = model.evaluate([sent1_test, sent2_test], y_test)
-	print ('\n\n\n 4_1024: \n\n\n' + '\nloss: ' + str(loss) + '  acc: ' + str(acc))
-
-with tf.device('/gpu:2'):
-	model = Model(outputs=pred, inputs=[premise, hypothesis])
-	# model.compile(loss='categorical_crossentropy', optimizer='adadelta', metrics=['accuracy'])
-	model.compile(loss='categorical_crossentropy', optimizer='adadelta')
-	callbacks = [EarlyStopping(monitor='val_acc', patience=8),\
-		TensorBoard(log_dir='./logs/snli/8_512', histogram_freq=1, write_graph=False)]
-	model.fit([sent1_train, sent2_train], y_train, batch_size=512, epochs=100, 
-		validation_data=([sent1_dev, sent2_dev], y_dev),callbacks=callbacks)
-	loss, acc = model.evaluate([sent1_test, sent2_test], y_test)
-	print ('\n\n\n 8_512: \n\n\n' + '\nloss: ' + str(loss) + '  acc: ' + str(acc))
-
-	model = Model(outputs=pred, inputs=[premise, hypothesis])
-	# model.compile(loss='categorical_crossentropy', optimizer='adadelta', metrics=['accuracy'])
-	model.compile(loss='categorical_crossentropy', optimizer='adadelta')
-	callbacks = [EarlyStopping(monitor='val_acc', patience=8),\
-		TensorBoard(log_dir='./logs/snli/8_1024', histogram_freq=1, write_graph=False)]
-	model.fit([sent1_train, sent2_train], y_train, batch_size=1024, epochs=100, 
-		validation_data=([sent1_dev, sent2_dev], y_dev),callbacks=callbacks)
-	loss, acc = model.evaluate([sent1_test, sent2_test], y_test)
-	print ('\n\n\n 8_1024: \n\n\n' + '\nloss: ' + str(loss) + '  acc: ' + str(acc))
+model = Model(outputs=pred, inputs=[premise, hypothesis])
+model.compile(loss='categorical_crossentropy', optimizer='nadam', metrics=['accuracy'])
+# model.compile(loss='categorical_crossentropy', optimizer='adadelta')
+e_s = EarlyStopping(monitor='val_acc', patience=8)
+csv_logger = CSVLogger('lstm_8_1024_variational.csv') 
+callbacks = [e_s, csv_logger]
+model.fit([sent1_train, sent2_train], y_train, batch_size=1024, epochs=100, 
+	validation_data=([sent1_dev, sent2_dev], y_dev),callbacks=callbacks)
+loss, acc = model.evaluate([sent1_test, sent2_test], y_test)
+print ('\nloss: ' + str(loss) + '  acc: ' + str(acc))
+with open('lstm_8_1024_variational.txt', 'w') as f:
+	f.write('test loss: ' + str(loss) + '	acc: ' + str(acc))
