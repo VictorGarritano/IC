@@ -6,6 +6,7 @@ import keras
 import keras.backend as K 
 from keras.models import Model
 from keras import optimizers
+from keras.initializers import Identity, RandomNormal
 from keras.callbacks import EarlyStopping, CSVLogger
 from keras.preprocessing.text import Tokenizer
 from keras.preprocessing.sequence import pad_sequences
@@ -14,9 +15,6 @@ from keras.layers import Embedding, TimeDistributed, Dropout, Input, Dense, conc
 from keras.layers.normalization import BatchNormalization
 from keras.regularizers import l2
 from keras.layers.recurrent import SimpleRNN, LSTM
-
-#Just use one gpu. Keras doesn't support multi-gpu yet...
-os.environ["CUDA_VISIBLE_DEVICES"]='0'
 
 def load_corpus(path, usecols=['gold_label', 'sentence1_binary_parse', 'sentence2_binary_parse']):
 	df = pd.read_csv(path,
@@ -60,7 +58,7 @@ Preprocessing data
 """
 
 """
-Check devices numbers of Tesla GPUs (it's 0 and 1)
+Check devices numbers of Tesla GPUs (0 and 2)
 
 """
 # sess = tf.Session(config=tf.ConfigProto(log_device_placement=True))
@@ -89,9 +87,10 @@ sentences_to_padded_index_sequences = lambda data: to_seq(data)
 
 sent1_train, sent2_train = sentences_to_padded_index_sequences(sent1_train), \
 sentences_to_padded_index_sequences(sent2_train)
-print ('Shape of sent1_train tensor: ' + str(sent1_train.shape))
-print ('Shape of sent2_train tensor: ' + str(sent2_train.shape))
-print ('Shape of label_train tensor: ' + str(y_train.shape))
+
+# print ('Shape of sent1_train tensor: ' + str(sent1_train.shape))
+# print ('Shape of sent2_train tensor: ' + str(sent2_train.shape))
+# print ('Shape of label_train tensor: ' + str(y_train.shape))
 
 print ("Preprocessing dev corpus...")
 path_dev = 'snli_1.0/snli_1.0_dev.txt'
@@ -111,9 +110,9 @@ y_dev = categories_to_categorical(df_dev['gold_label'], 3)
 sent1_dev, sent2_dev = sentences_to_padded_index_sequences(sent1_dev), \
 sentences_to_padded_index_sequences(sent2_dev)
 
-print ('Shape of sent1_dev tensor: ' + str(sent1_dev.shape))
-print ('Shape of sent2_dev tensor: '+ str(sent2_dev.shape))
-print ('Shape of label_dev tensor: '+ str(y_dev.shape))
+# print ('Shape of sent1_dev tensor: ' + str(sent1_dev.shape))
+# print ('Shape of sent2_dev tensor: '+ str(sent2_dev.shape))
+# print ('Shape of label_dev tensor: '+ str(y_dev.shape))
 
 print ("Preprocessing test corpus...")
 path_test = 'snli_1.0/snli_1.0_test.txt'
@@ -133,9 +132,9 @@ y_test = categories_to_categorical(df_test['gold_label'], 3)
 sent1_test, sent2_test = sentences_to_padded_index_sequences(sent1_test), \
 sentences_to_padded_index_sequences(sent2_test)
 
-print ('Shape of sent1_test tensor: ' + str(sent1_test.shape))
-print ('Shape of sent2_test tensor: '+ str(sent2_test.shape))
-print ('Shape of label_test tensor: '+ str(y_test.shape))
+# print ('Shape of sent1_test tensor: ' + str(sent1_test.shape))
+# print ('Shape of sent2_test tensor: '+ str(sent2_test.shape))
+# print ('Shape of label_test tensor: '+ str(y_test.shape))
 
 """
 Preparing the Embedding Layer
@@ -165,14 +164,19 @@ for word, i in tokenizer.word_index.items():
 		embedding_matrix[i] = embedding_vector
 
 embedding_layer = Embedding(len(tokenizer.word_index) + 1,
-							300,
-							weights=[embedding_matrix],
-							input_length=MAX_LEN,
-							trainable=False)
-
+						300,
+						weights=[embedding_matrix],
+						input_length=MAX_LEN,
+						trainable=False)
 sum_embeddings_layer = keras.layers.core.Lambda(lambda x: K.sum(x, axis=1), output_shape=(300, ))
-rnn_layer = SimpleRNN(units=300, dropout=0.5, recurrent_dropout=0.5, implementation=1)
-lstm_layer = LSTM(units=300, dropout=0.5, recurrent_dropout=0.5, implementation=2)
+
+# 'simple way'
+init_kernel = RandomNormal(stddev=0.001)
+init_recurrent = Identity(0.01)
+rnn_layer = SimpleRNN(units=300, activation='relu', kernel_initializer=init_kernel, \
+	recurrent_initializer=init_recurrent, implementation=1)
+#############
+lstm_layer = LSTM(units=300, dropout=0.5, recurrnt_dropout=0.5, implementation=2)
 translate_layer = Dense(units=100, activation='relu')
 
 premise = Input(shape=(MAX_LEN, ), dtype='int32')
@@ -181,6 +185,8 @@ prem = embedding_layer(premise)
 hypo = embedding_layer(hypothesis)
 #prem = sum_embeddings_layer(prem)
 #hypo = sum_embeddings_layer(hypo)
+# prem = rnn_layer(prem)
+# hypo = rnn_layer(hypo)
 prem = lstm_layer(prem)
 hypo = lstm_layer(hypo)
 prem = translate_layer(prem)
@@ -198,14 +204,28 @@ pred = Dense(3, activation='softmax')(x)
 print ('Start training...')
 
 model = Model(outputs=pred, inputs=[premise, hypothesis])
-model.compile(loss='categorical_crossentropy', optimizer='nadam', metrics=['accuracy'])
-# model.compile(loss='categorical_crossentropy', optimizer='adadelta')
+model.compile(loss='categorical_crossentropy', optimizer=nadam, metrics=['accuracy'])
 e_s = EarlyStopping(monitor='val_acc', patience=8)
-csv_logger = CSVLogger('lstm_8_1024_variational.csv') 
+csv_logger = CSVLogger('train.csv') 
 callbacks = [e_s, csv_logger]
 model.fit([sent1_train, sent2_train], y_train, batch_size=1024, epochs=100, 
 	validation_data=([sent1_dev, sent2_dev], y_dev),callbacks=callbacks)
 loss, acc = model.evaluate([sent1_test, sent2_test], y_test)
+
 print ('\nloss: ' + str(loss) + '  acc: ' + str(acc))
-with open('lstm_8_1024_variational.txt', 'w') as f:
+
+with open('train.txt', 'w') as f:
 	f.write('test loss: ' + str(loss) + '	acc: ' + str(acc))
+
+def misclassified(model, x, labels):
+	probs = model.predict_proba(x)
+	misclassified_idx = []
+	for i in range(len(x)):
+		if np.argmax(probs[i]) != np.argmax(labels[i]):
+			misclassified_idx.append(i)
+	return probs, misclassified_idx
+
+mis_idx = misclassified(model, [sent1_test, sent2_test], y_test)
+
+#save misclassified statistics
+np.save('statistics.npy',[probs, y_test, mis_idx])
