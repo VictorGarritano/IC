@@ -176,7 +176,7 @@ init_recurrent = Identity(0.01)
 rnn_layer = SimpleRNN(units=300, activation='relu', kernel_initializer=init_kernel, \
 	recurrent_initializer=init_recurrent, implementation=1)
 #############
-lstm_layer = LSTM(units=300, dropout=0.5, recurrnt_dropout=0.5, implementation=2)
+lstm_layer = LSTM(units=300, dropout=0.5, recurrent_dropout=0.5, implementation=2)
 translate_layer = Dense(units=100, activation='relu')
 
 premise = Input(shape=(MAX_LEN, ), dtype='int32')
